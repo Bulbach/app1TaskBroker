@@ -1,4 +1,4 @@
-package com.alexIntervale1.app1.worker.repository.model;
+package com.alexIntervale1.app1.repository.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
