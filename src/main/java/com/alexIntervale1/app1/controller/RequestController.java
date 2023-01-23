@@ -1,4 +1,4 @@
-package com.alexIntervale1.app1.client;
+package com.alexIntervale1.app1.controller;
 
 import com.alexIntervale1.app1.repository.dto.PersonDto;
 import com.google.gson.Gson;
