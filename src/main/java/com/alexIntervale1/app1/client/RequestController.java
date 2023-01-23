@@ -34,6 +34,7 @@ public class RequestController {
     //individual person,juridical person
     @PostMapping("individual_person")
     public ResponseEntity<String> sendMessageIndividualPerson(@Valid @RequestBody PersonDto message) {
+
         log.debug("Получен запрос " + message);
         try {
             String json = gson.toJson(message);
@@ -60,6 +61,7 @@ public class RequestController {
         ActiveMQTextMessage textMessage = new ActiveMQTextMessage();
         textMessage.setCorrelationId(key);
         textMessage.setText(json);
+        log.info("Created TextMessage " + textMessage);
         return textMessage;
     }
 
