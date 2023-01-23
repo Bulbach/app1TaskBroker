@@ -18,6 +18,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageNotWriteableException;
 import javax.jms.TextMessage;
+import javax.validation.Valid;
 import java.util.HashMap;
 
 @Slf4j
@@ -32,7 +33,7 @@ public class RequestController {
 
     //individual person,juridical person
     @PostMapping("individual_person")
-    public ResponseEntity<String> sendMessageIndividualPerson(@RequestBody PersonDto message) {
+    public ResponseEntity<String> sendMessageIndividualPerson(@Valid @RequestBody PersonDto message) {
         log.debug("Получен запрос " + message);
         try {
             String json = gson.toJson(message);
