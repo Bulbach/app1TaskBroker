@@ -1,5 +1,6 @@
 package com.alexIntervale1.app1.controller;
 
+import com.alexIntervale1.app1.exeption.CustomAppException;
 import com.alexIntervale1.app1.repository.dto.PersonDto;
 import com.google.gson.Gson;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +32,6 @@ public class RequestController {
     private static long count = 0;
     private static final HashMap<String, String> textMessageMap = new HashMap<String, String>();
 
-    //individual person,juridical person
     @PostMapping("individual_person")
     public ResponseEntity<String> sendMessageIndividualPerson(@Valid @RequestBody PersonDto message) {
 
@@ -57,22 +57,27 @@ public class RequestController {
         }
     }
 
-    private ActiveMQTextMessage getTextMessage(String key, String json) throws MessageNotWriteableException {
+    private ActiveMQTextMessage getTextMessage(String key, String json) throws CustomAppException {
         ActiveMQTextMessage textMessage = new ActiveMQTextMessage();
         textMessage.setCorrelationId(key);
-        textMessage.setText(json);
+        try {
+            textMessage.setText(json);
+        } catch (MessageNotWriteableException e) {
+            log.warn("Проблема при добавлении сообщения в textMessage" + json);
+            throw new CustomAppException(e);
+        }
         log.info("Created TextMessage " + textMessage);
         return textMessage;
     }
 
-    private static String getResult(String key) throws InterruptedException {
+    private static String getResult(String key) throws CustomAppException {
         log.info("ключ запроса на ответ " + key);
         while (!textMessageMap.containsKey(key)) {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
                 log.warn("Проблемы при получении результата, метод getResult ", e);
-                throw new InterruptedException(e.getMessage());
+                throw new CustomAppException(e);
             }
         }
         String result = textMessageMap.get(key);
@@ -81,13 +86,24 @@ public class RequestController {
     }
 
     @JmsListener(destination = "outindividual.queue")
-    private void result(final Message message) throws JMSException {
-        String key = message.getJMSCorrelationID();
+    private void result(final Message message) throws CustomAppException {
+        String key = null;
+        try {
+            key = message.getJMSCorrelationID();
+        } catch (JMSException e) {
+            log.warn("Проблемы при получении порядкового номера сообщения , метод result ", e);
+            throw new CustomAppException(e);
+        }
         log.debug("Порядковый номер отправленного сообщения " + key);
         String body = "";
         if (message instanceof TextMessage) {
             TextMessage textMessage = (TextMessage) message;
-            body = textMessage.getText();
+            try {
+                body = textMessage.getText();
+            } catch (JMSException e) {
+                log.warn("Проблемы при получении текста ответа, метод result ", e);
+                throw new CustomAppException(e);
+            }
         }
         textMessageMap.put(key, body);
     }
