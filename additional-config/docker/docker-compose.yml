@@ -1,0 +1,17 @@
+
+services:
+
+  activemq:
+    image: rmohr/activemq
+    restart: always
+    ports:
+      - 61616:61616
+      - 8161:8161
+    volumes:
+      - mq-conf-volume:/opt/activemq/conf
+      - mq-data-volume:/opt/activemq/data
+
+
+volumes:
+  mq-conf-volume:
+  mq-data-volume:
