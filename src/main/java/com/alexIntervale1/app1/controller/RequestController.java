@@ -2,6 +2,7 @@ package com.alexIntervale1.app1.controller;
 
 import com.alexIntervale1.app1.exeption.CustomAppException;
 import com.alexIntervale1.app1.repository.dto.PersonDto;
+import com.alexIntervale1.app1.repository.dto.ResultDto;
 import com.google.gson.Gson;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,10 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -32,12 +30,14 @@ public class RequestController {
     private static long count = 0;
     private static final HashMap<String, String> textMessageMap = new HashMap<String, String>();
 
-    @PostMapping("individual_person")
-    public ResponseEntity<String> sendMessageIndividualPerson(@Valid @RequestBody PersonDto message) {
-
+    @PostMapping(value = "individual_person"
+    )
+    public ResponseEntity<ResultDto> sendMessageIndividualPerson(@Valid @RequestBody PersonDto message) {
         log.debug("Получен запрос " + message);
+
         try {
             String json = gson.toJson(message);
+
             log.debug("Преобразованное в json входяўее сообщение " + json);
             String key = String.valueOf(count += 1);
 
@@ -47,14 +47,20 @@ public class RequestController {
             textMessage.acknowledge();
 
             String response = getResult(key);
-
-            return new ResponseEntity<>("Запрос успешно отправлен " + json +
-                    " ответ на данный запрос " + response, HttpStatus.OK);
+            ResultDto resultDto = generationResultDto(message, response);
+            return new ResponseEntity<>(resultDto, HttpStatus.OK);
 
         } catch (Exception e) {
             log.warn("Проблема при отправке сообщения в очередь, метод sendMessageIndividualPerson ", e);
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.internalServerError().build();
         }
+    }
+
+    private ResultDto generationResultDto(PersonDto message, String response) {
+        ResultDto resultDto = gson.fromJson(response, ResultDto.class);
+        resultDto.setName(message.getName());
+        resultDto.setSurname(message.getSurname());
+        return resultDto;
     }
 
     private ActiveMQTextMessage getTextMessage(String key, String json) throws CustomAppException {
